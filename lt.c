@@ -90,8 +90,9 @@ int main(void) {
   init(vArray);
 
   for(t = 0, r = 0, n = ACTIVE_NUM, m = ACTIVE_NUM; n < SIZE && r < RETRY_LIMIT; t++) {
-    n = iterate(vArray);
+
     printf("時刻 t = %d, Activeノード %d / %d\n", t, n, SIZE);
+    n = iterate(vArray);
 
     if(n == m) {
       r ++;
