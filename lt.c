@@ -31,7 +31,7 @@ void init(struct node* vArray) {
     
     for(j = 0, w = 0.0; j < SIZE; j++) {
       if(i == j) {
-	vArray[i].weight[j] = 0;	
+	vArray[i].weight[j] = 0;
       }
       else { //重みを設定
 	vArray[i].weight[j] = ((double)rand() / (double)RAND_MAX) / (double)SIZE;
@@ -63,15 +63,17 @@ int iterate(struct node* vArray) {
   for(i = 0, n = 0; i < SIZE; i++) {
 
     if(vArray[i].isActive) {
-      n ++;
+      n ++; //Activeノードの数をカウント
       continue;
     }
 
     for(j = 0, w = 0.0; j < SIZE; j++) {
+      //Activeノードからの重み総和
       w += vArray[j].isActive ? vArray[i].weight[j] : 0.0;
     }
 
     if(vArray[i].theta < w) {
+      //重み総和が閾値を超えていたらActive状態にする
       vArray[i].isActive = 1;
       n ++;
     }
@@ -89,12 +91,14 @@ int main(void) {
   //グラフを初期化
   init(vArray);
 
+  //何も更新されなくなるか、全てActiveになるまで時刻を進めて状態を観察する
   for(t = 0, r = 0, n = ACTIVE_NUM, m = ACTIVE_NUM; n < SIZE && r < RETRY_LIMIT; t++) {
 
     printf("時刻 t = %d, Activeノード %d / %d\n", t, n, SIZE);
-    n = iterate(vArray);
+    n = iterate(vArray); //次の時刻でActive状態のノードの数を更新・取得
 
     if(n == m) {
+      //時刻が進んでも何も更新がない場合
       r ++;
     }
     else {
