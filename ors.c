@@ -45,9 +45,6 @@ void init(struct node* vArray) {
     //ORS状態を Outsider に初期化
     vArray[j].status = O;
 
-    //感度設定
-    vArray[j].s = ((double)rand() / (double)RAND_MAX);
-
     //影響度設定
     vArray[j].a = (int)(((double)rand() / (double)RAND_MAX) * (double)(OMAX - OMIN)) + OMIN;
 
@@ -60,7 +57,7 @@ void init(struct node* vArray) {
     c = vArray[j].a;
     while(c) {
       int index = SIZE * ((double)rand() / (double)RAND_MAX);
-      if(index == j) {
+      if(index == j || 0 <= vArray[j].an[index]) {
 	continue;
       }
       else {
