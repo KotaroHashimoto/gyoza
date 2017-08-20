@@ -56,7 +56,7 @@ void init(struct node* vArray) {
       vArray[j].an[k] = -1;
     }
 
-    // ノードjが影響を与えるノードj
+    // ノードjが影響を与えるノードindex
     c = vArray[j].a;
     while(c) {
       int index = SIZE * ((double)rand() / (double)RAND_MAX);
