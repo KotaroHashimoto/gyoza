@@ -8,7 +8,8 @@
 #define LAMBDA 0.125 //忘却率λ
 #define OMAX 8 //次数の最大値
 #define OMIN 2 //次数の最小値
-#define RETRY 32 //試行回数
+#define RETRY 512 //試行回数
+#define NEW_INFO_PROB 0.0005 //各試行、各ノードが新しい情報を発信するようになる確率
 
 #define O 0 //Outsider
 #define R 1 //Receiver
@@ -20,9 +21,12 @@ struct node {
   double i; //興味度
   double s; //感度
   int FG; //はじめに情報を受け取った時刻
+  int infoID; //現在持っている情報ID
   double mot; //現在のMOT
   double an[SIZE]; //このノードが情報を与えるノードのインデックス
 };
+
+FILE* fp;
 
 void init(struct node* vArray);
 void iterate(struct node* vArray, int* o, int* r, int* s, int t);
@@ -48,12 +52,14 @@ void init(struct node* vArray) {
     //影響度設定
     vArray[j].a = (int)(((double)rand() / (double)RAND_MAX) * (double)(OMAX - OMIN)) + OMIN;
 
+    //何も情報を持っていない状態に初期化
+    vArray[j].infoID = -1;
 
     for(k = 0; k < SIZE; k++) {
       vArray[j].an[k] = -1;
     }
 
-    // ノードjが影響を与えるノードindex
+    // ノードjが影響を与えるノードindex設定
     c = vArray[j].a;
     while(c) {
       int index = SIZE * ((double)rand() / (double)RAND_MAX);
@@ -79,7 +85,12 @@ void init(struct node* vArray) {
     }
     vArray[index].status = S;
     vArray[index].FG = 0;
+    vArray[index].infoID = rand();
   }
+
+
+  // Senderの影響度を出力するファイル
+  fp = fopen("Sender_Influences.csv", "w");
 }
 
 
@@ -87,29 +98,49 @@ void iterate(struct node* vArray, int* o, int* r, int* s, int t) {
 
   int j, k;
 
+  //新しい情報を発信する新たなSender状態となるノードを作る
+  for(j = 0; j < SIZE; j++) {
+    double p = (double)rand() / (double)RAND_MAX;
+    if(p < NEW_INFO_PROB) {
+      vArray[j].status = S;
+      vArray[j].FG = 0;
+      vArray[j].infoID = rand();
+    }
+  }
+
+
   // MOT計算
   for(j = 0; j < SIZE; j++) {
 
+    // 忘却率設定に従ってMOTを更新
     if(0 <= vArray[j].FG) {
       //      printf("mot = %lf\n", vArray[j].mot);
       vArray[j].mot /= pow(2.71828, LAMBDA * (double)(t - vArray[j].FG));
     }
 
+    // 情報の伝播プロセス
     for(k = 0; k < SIZE; k++) {    
       int ti = vArray[j].an[k];
       if(ti < 0) {
-	continue;
+	continue; // 自身jが影響を与えないノードkは無視
       }
       else if(vArray[j].status != S) {
-	continue;
+	continue; // 自身がsenderでなかったらスキップ
       }
 
+
+      if(vArray[ti].infoID != vArray[j].infoID) {
+        vArray[ti].mot = 0; //新規情報を伝播させた場合、相手側のMOTをリセット
+      }
+
+      // 影響を受ける側のMOT, FGを更新
       vArray[ti].mot += vArray[ti].i * vArray[ti].s * vArray[j].a;
       vArray[ti].FG = (vArray[ti].FG < t ? t : vArray[ti].FG);
     }
   }
   
 
+  // Outsider -> Receiver <-> Sender への状態遷移
   for(j = 0; j < SIZE; j++) {
 
     //    printf("%lf\n", vArray[j].mot);
@@ -124,6 +155,9 @@ void iterate(struct node* vArray, int* o, int* r, int* s, int t) {
   }
 
 
+  fprintf(fp, "time %d,", t);
+
+  // 各ステップでの Outsider, Receiver, Sender のノード数をカウント
   (*o) = 0;
   (*r) = 0;
   (*s) = 0;
@@ -138,9 +172,12 @@ void iterate(struct node* vArray, int* o, int* r, int* s, int t) {
       break;
     case S:
       (*s) ++;
+      fprintf(fp, "%d,", vArray[j].a);  
       break;
     }
   }
+
+  fprintf(fp, "\n");
 }
 
 
@@ -159,5 +196,7 @@ int main(void) {
     iterate(vArray, &o, &r, &s, t); //次の時刻でノードの状態を更新・取得
   }
 
+
+  fclose(fp);
   return 0;
 }
