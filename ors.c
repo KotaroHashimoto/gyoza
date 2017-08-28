@@ -26,12 +26,16 @@ struct node {
   double an[SIZE]; //このノードが情報を与えるノードのインデックス
 };
 
+
+int o, r, s; // Outsider, Receiver, Sender の各時間ごとのノード数
+struct node vArray[SIZE]; //ノード配列
+
 FILE* fp;
 
-void init(struct node* vArray);
-void iterate(struct node* vArray, int* o, int* r, int* s, int t);
+void init(void);
+void iterate(int t);
 
-void init(struct node* vArray) {
+void init(void) {
 
   int j, k, c;
 
@@ -94,7 +98,7 @@ void init(struct node* vArray) {
 }
 
 
-void iterate(struct node* vArray, int* o, int* r, int* s, int t) {
+void iterate(int t) {
 
   int j, k;
 
@@ -158,20 +162,20 @@ void iterate(struct node* vArray, int* o, int* r, int* s, int t) {
   fprintf(fp, "time %d,", t);
 
   // 各ステップでの Outsider, Receiver, Sender のノード数をカウント
-  (*o) = 0;
-  (*r) = 0;
-  (*s) = 0;
+  o = 0;
+  r = 0;
+  s = 0;
 
   for(j = 0; j < SIZE; j++) {
     switch(vArray[j].status) {
     case O:
-      (*o) ++;
+      o ++;
       break;
     case R:
-      (*r) ++;
+      r ++;
       break;
     case S:
-      (*s) ++;
+      s ++;
       fprintf(fp, "%d,", vArray[j].a);  
       break;
     }
@@ -183,17 +187,16 @@ void iterate(struct node* vArray, int* o, int* r, int* s, int t) {
 
 int main(void) {
 
-  int t, o, r, s;
-  struct node vArray[SIZE];
+  int t;
 
   //グラフを初期化
-  init(vArray);
+  init();
 
   //RETRY回繰り返し
   for(t = 0, o = SIZE - INIT_S_NUM, r = 0, s = INIT_S_NUM; t < RETRY; t++) {
 
     printf("時刻 t = %d, Outsider:%d, Receiver:%d, Sender:%d\n", t, o, r, s);
-    iterate(vArray, &o, &r, &s, t); //次の時刻でノードの状態を更新・取得
+    iterate(t); //次の時刻でノードの状態を更新・取得
   }
 
 
